@@ -39,13 +39,10 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
 )
 tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_ID,
-    cache_dir=CACHE_DIR,
-    trust_remote_code=True,
+    MODEL_ID, cache_dir=CACHE_DIR, trust_remote_code=True
 )
 print("Model and tokenizer loaded successfully.")
 print("-" * 20)
-
 
 system_prompt_content = "You are a helpful AI assistant. Provide a clear and accurate answer to the user's question."
 user_prompt_content = "A sphere is inscribed in a cube. What is the ratio of the volume of the sphere to the volume of the cube? Provide the final answer as a simplified fraction involving pi."
@@ -59,36 +56,34 @@ input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
 
 analysis_log = []
 generated_token_ids = []
+past_key_values = None
 
-print("--- Starting Live Generation ---")
+print("--- Starting Live Generation (with KV Cache) ---")
 print(prompt, end="")
 
 with torch.no_grad():
     for step in range(MAX_NEW_TOKENS):
-        outputs = model(input_ids=input_ids)
+        outputs = model(input_ids=input_ids, past_key_values=past_key_values)
         logits = outputs.logits[:, -1, :]
+        past_key_values = outputs.past_key_values
 
-        # Apply sampling parameters
         logits /= TEMPERATURE
-        top_k_values, _ = torch.topk(logits, TOP_K_SAMPLING)
-        logits[logits < top_k_values[:, -1, None]] = -float("inf")
-        probs_for_filtering = torch.softmax(logits, dim=-1)
-        sorted_probs, sorted_indices = torch.sort(
-            probs_for_filtering, descending=True
-        )
-        cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
-        sorted_indices_to_remove = cumulative_probs > TOP_P
-        sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[
-            ..., :-1
-        ].clone()
-        sorted_indices_to_remove[..., 0] = 0
-        indices_to_remove = sorted_indices[sorted_indices_to_remove]
-        logits[:, indices_to_remove] = -float("inf")
+        if TOP_K_SAMPLING > 0:
+            top_k_values, _ = torch.topk(logits, TOP_K_SAMPLING)
+            logits[logits < top_k_values[:, -1, None]] = -float("inf")
+        if TOP_P < 1.0:
+            probs_for_filtering = torch.softmax(logits, dim=-1)
+            sorted_probs, sorted_indices = torch.sort(probs_for_filtering, descending=True)
+            cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+            sorted_indices_to_remove = cumulative_probs > TOP_P
+            sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+            sorted_indices_to_remove[..., 0] = 0
+            indices_to_remove = sorted_indices[sorted_indices_to_remove]
+            logits[:, indices_to_remove] = -float("inf")
 
         final_probs = torch.softmax(logits, dim=-1)
         next_token_id = torch.multinomial(final_probs, num_samples=1)
 
-        # Log analysis data
         full_probs = torch.softmax(outputs.logits[:, -1, :], dim=-1)
         top_probs, top_indices = torch.topk(full_probs, TOP_K_ANALYSIS, dim=-1)
         step_data = {
@@ -105,14 +100,13 @@ with torch.no_grad():
         }
         analysis_log.append(step_data)
 
-        # Stream output to console
         generated_token_ids.append(next_token_id.item())
         print(tokenizer.decode(next_token_id[0]), end="", flush=True)
 
         if next_token_id.item() == tokenizer.eos_token_id:
             break
 
-        input_ids = torch.cat([input_ids, next_token_id], dim=-1)
+        input_ids = next_token_id
 
 print("\n\n--- Generation Complete ---")
 
