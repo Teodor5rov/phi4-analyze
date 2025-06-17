@@ -10,7 +10,6 @@ PERSISTENT_DIR = "/workspace"
 CACHE_DIR = os.path.join(PERSISTENT_DIR, "huggingface_cache")
 OUTPUT_DIR = os.path.join(PERSISTENT_DIR, "outputs")
 
-
 TEMPERATURE = 0.8
 TOP_K_SAMPLING = 50
 TOP_P = 0.95
@@ -48,43 +47,13 @@ print("Model and tokenizer loaded successfully.")
 print("-" * 20)
 
 
-messages = [
-    {
-        "role": "system",
-        "content": (
-            "You are Phi, a language model trained by Microsoft to help users. "
-            "Your role as an assistant involves thoroughly exploring questions "
-            "through a systematic thinking process before providing the final "
-            "precise and accurate solutions. This requires engaging in a "
-            "comprehensive cycle of analysis, summarizing, exploration, "
-            "reassessment, reflection, backtracing, and iteration to develop "
-            "well-considered thinking process. Please structure your response "
-            "into two main sections: Thought and Solution using the specified "
-            "format: <think> {Thought section} </think> {Solution section}. "
-            "In the Thought section, detail your reasoning process in steps. "
-            "Each step should include detailed considerations such as analysing "
-            "questions, summarizing relevant findings, brainstorming new ideas, "
-            "verifying the accuracy of the current steps, refining any errors, "
-            "and revisiting previous steps. In the Solution section, based on "
-            "various attempts, explorations, and reflections from the Thought "
-            "section, systematically present the final solution that you deem "
-            "correct. The Solution section should be logical, accurate, and "
-            "concise and detail necessary steps needed to reach the conclusion. "
-            "Now, try to solve the following question through the above guidelines:"
-        ),
-    },
-    {
-        "role": "user",
-        "content": (
-            "A sphere is inscribed in a cube. What is the ratio of the "
-            "volume of the sphere to the volume of the cube? Provide the "
-            "final answer as a simplified fraction involving pi."
-        ),
-    },
-]
+system_prompt_content = "You are a helpful AI assistant. Provide a clear and accurate answer to the user's question."
+user_prompt_content = "A sphere is inscribed in a cube. What is the ratio of the volume of the sphere to the volume of the cube? Provide the final answer as a simplified fraction involving pi."
 
-prompt = tokenizer.apply_chat_template(
-    messages, tokenize=False, add_generation_prompt=True
+prompt = (
+    f"<|im_start|>system<|im_sep|>{system_prompt_content}<|im_end|>"
+    f"<|im_start|>user<|im_sep|>{user_prompt_content}<|im_end|>"
+    f"<|im_start|>assistant<|im_sep|>"
 )
 input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
 
