@@ -73,12 +73,15 @@ with torch.no_grad():
         if TOP_K_SAMPLING > 0:
             top_k_values, _ = torch.topk(logits, TOP_K_SAMPLING)
             logits[logits < top_k_values[:, -1, None]] = -float("inf")
-        
+
         sampling_probs = torch.softmax(logits, dim=-1)
         variance_value = torch.var(sampling_probs).item()
         if variance_value < VARIANCE_THRESHOLD:
             print(f"\033[1m (VARIANCE: {variance_value:.2e}) \033[0m", end="")
-        
+
+        dist = torch.distributions.Categorical(probs=sampling_probs)
+        entropy_value = dist.entropy().item()
+
         if TOP_P < 1.0:
             probs_for_filtering = torch.softmax(logits, dim=-1)
             sorted_probs, sorted_indices = torch.sort(probs_for_filtering, descending=True)
@@ -99,6 +102,7 @@ with torch.no_grad():
             "chosen_token": tokenizer.decode(next_token_id[0]),
             "chosen_token_prob": full_probs[0, next_token_id[0]].item(),
             "variance": variance_value,
+            "entropy": entropy_value,
             "top_k_predictions": [
                 {
                     "token": tokenizer.decode(int(top_indices[0, i])),
