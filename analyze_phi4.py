@@ -16,7 +16,7 @@ TOP_P = 0.95
 MAX_NEW_TOKENS = 32768
 
 TOP_K_ANALYSIS = 50
-MAX_VARIANCE = 0
+VARIANCE_THRESHOLD = 2e-06
 
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -60,7 +60,7 @@ analysis_log = []
 generated_token_ids = []
 past_key_values = None
 
-print("--- Starting Live Generation (with KV Cache) ---")
+print("--- Starting Live Generation ---")
 print(prompt, end="")
 
 with torch.no_grad():
@@ -76,8 +76,8 @@ with torch.no_grad():
         
         sampling_probs = torch.softmax(logits, dim=-1)
         variance_value = torch.var(sampling_probs).item()
-        if variance_value > MAX_VARIANCE:
-            print(f" (Variance: {variance_value:.2e}) ", end="")
+        if variance_value < VARIANCE_THRESHOLD:
+            print(f"\033[1m (VARIANCE: {variance_value:.2e}) \033[0m", end="")
         
         if TOP_P < 1.0:
             probs_for_filtering = torch.softmax(logits, dim=-1)
