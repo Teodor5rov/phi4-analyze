@@ -1,4 +1,9 @@
 git clone https://github.com/Teodor5rov/phi4-analyze.git .
+chmod +x setup.sh
+./setup.sh
+
+
+-------------------------------------------------
 
 git config --global user.name "Teodor"
 git config --global user.email "teo@example.com"
@@ -8,5 +13,7 @@ python -m venv venv
 source venv/bin/activate
 
 pip install transformers accelerate bitsandbytes huggingface_hub safetensors tqdm
+
+-------------------------------------------------
 
 pip install jupyter matplotlib seaborn pandas ipython
