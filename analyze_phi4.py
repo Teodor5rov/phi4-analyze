@@ -14,7 +14,9 @@ TEMPERATURE = 0.8
 TOP_K_SAMPLING = 50
 TOP_P = 0.95
 MAX_NEW_TOKENS = 32768
+
 TOP_K_ANALYSIS = 50
+MAX_VARIANCE = 0
 
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -45,7 +47,7 @@ print("Model and tokenizer loaded successfully.")
 print("-" * 20)
 
 system_prompt_content = "You are a helpful AI assistant. Provide a clear and accurate answer to the user's question."
-user_prompt_content = "A sphere is inscribed in a cube. What is the ratio of the volume of the sphere to the volume of the cube? Provide the final answer as a simplified fraction involving pi."
+user_prompt_content = """How are you?"""
 
 prompt = (
     f"<|im_start|>system<|im_sep|>{system_prompt_content}<|im_end|>"
@@ -71,6 +73,12 @@ with torch.no_grad():
         if TOP_K_SAMPLING > 0:
             top_k_values, _ = torch.topk(logits, TOP_K_SAMPLING)
             logits[logits < top_k_values[:, -1, None]] = -float("inf")
+        
+        sampling_probs = torch.softmax(logits, dim=-1)
+        variance_value = torch.var(sampling_probs).item()
+        if variance_value > MAX_VARIANCE:
+            print(f" (Variance: {variance_value:.2e}) ", end="")
+        
         if TOP_P < 1.0:
             probs_for_filtering = torch.softmax(logits, dim=-1)
             sorted_probs, sorted_indices = torch.sort(probs_for_filtering, descending=True)
@@ -90,6 +98,7 @@ with torch.no_grad():
             "step": step + 1,
             "chosen_token": tokenizer.decode(next_token_id[0]),
             "chosen_token_prob": full_probs[0, next_token_id[0]].item(),
+            "variance": variance_value,
             "top_k_predictions": [
                 {
                     "token": tokenizer.decode(int(top_indices[0, i])),
