@@ -16,4 +16,6 @@ pip install transformers accelerate bitsandbytes huggingface_hub safetensors tqd
 
 -------------------------------------------------
 
-pip install jupyter matplotlib seaborn pandas ipython
+pip install jupyter matplotlib seaborn pandas ipython ipykernel
+
+python -m ipykernel install --user --name=venv --display-name "Python (Odor_venv)"
