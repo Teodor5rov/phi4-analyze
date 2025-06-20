@@ -12,7 +12,8 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 
 source $VENV_DIR/bin/activate
-pip install --no-cache-dir transformers accelerate bitsandbytes huggingface_hub safetensors tqdm
+pip install --no-cache-dir transformers accelerate bitsandbytes huggingface_hub safetensors tqdm jupyter matplotlib seaborn pandas ipython ipykernel
+python -m ipykernel install --user --name=venv --display-name "Python (Odor_venv)"
 deactivate
 
 echo "Setup complete. Run:"
