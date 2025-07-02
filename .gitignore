@@ -2,3 +2,5 @@
 /huggingface_cache
 /outputs
 prompt.txt
+*.png
+reconstructed_text.txt
