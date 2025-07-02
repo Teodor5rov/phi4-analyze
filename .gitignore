@@ -4,3 +4,4 @@
 prompt.txt
 *.png
 reconstructed_text.txt
+/.ipynb_checkpoints
