@@ -89,23 +89,20 @@ with torch.no_grad():
         logits = logits.float()
         logits /= TEMPERATURE
 
-        unfiltered_probs = torch.softmax(logits, dim=-1)
-        entropy_value = - (unfiltered_probs * torch.log(unfiltered_probs + 1e-12)).sum().item()
-
         if TOP_K_SAMPLING > 0:
             top_k_vals, _ = torch.topk(logits, TOP_K_SAMPLING)
             logits[logits < top_k_vals[:, -1, None]] = -float("inf")
 
         sampling_probs = torch.softmax(logits, dim=-1)
         variance_value = torch.var(sampling_probs).item()
+        entropy_value = - (sampling_probs * torch.log2(sampling_probs + 1e-12)).sum().item()
         # if variance_value < VARIANCE_THRESHOLD:
         #     print(f"\033[1m (VARIANCE: {variance_value:.2e}) \033[0m", end="")
         if entropy_value > ENTROPY_THRESHOLD:
              print(f"\033[1m (ENTROPY: {entropy_value:.2e}) \033[0m", end="")
 
         if TOP_P < 1.0:
-            probs_for_filtering = torch.softmax(logits, dim=-1)
-            sorted_probs, sorted_indices = torch.sort(probs_for_filtering, descending=True)
+            sorted_probs, sorted_indices = torch.sort(sampling_probs, descending=True)
             cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
             mask = cumulative_probs > TOP_P
             mask[..., 1:] = mask[..., :-1].clone()

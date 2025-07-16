@@ -12,10 +12,8 @@ python -m venv venv
 
 source venv/bin/activate
 
-pip install transformers accelerate bitsandbytes huggingface_hub safetensors tqdm
+pip install transformers accelerate bitsandbytes huggingface_hub safetensors tqdm jupyter matplotlib seaborn pandas ipython ipykernel torchinfo
 
 -------------------------------------------------
-
-pip install jupyter matplotlib seaborn pandas ipython ipykernel
 
 python -m ipykernel install --user --name=venv --display-name "Python (Odor_venv)"
