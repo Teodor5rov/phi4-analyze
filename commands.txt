@@ -12,7 +12,7 @@ python -m venv venv
 
 source venv/bin/activate
 
-pip install transformers accelerate bitsandbytes huggingface_hub safetensors tqdm jupyter matplotlib seaborn pandas ipython ipykernel torchinfo
+pip install transformers kernels torch accelerate bitsandbytes huggingface_hub safetensors tqdm jupyter matplotlib seaborn pandas ipython ipykernel torchinfo
 
 -------------------------------------------------
 

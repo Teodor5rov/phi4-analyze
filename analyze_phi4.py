@@ -4,7 +4,7 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datetime import datetime
 
-MODEL_ID = "microsoft/Phi-4-reasoning"
+MODEL_ID = "openai/gpt-oss-20b"
 
 PERSISTENT_DIR = "/workspace"
 CACHE_DIR = os.path.join(PERSISTENT_DIR, "huggingface_cache")
@@ -47,8 +47,9 @@ tokenizer = AutoTokenizer.from_pretrained(
 print("Model and tokenizer loaded successfully.")
 print("-" * 20)
 
-system_prompt_content = "You are Phi, a language model to help users. Your role as an assistant involves thoroughly exploring questions through a systematic thinking process before providing the final precise and accurate solutions. This requires engaging in a comprehensive cycle of analysis, summarizing, exploration, reassessment, reflection, backtracing, and iteration to develop well-considered thinking process. Please structure your response into two main sections: Thought and Solution using the specified format: <think> {Thought section} </think> {Solution section}. In the Thought section, detail your reasoning process in steps. Each step should include detailed considerations such as analysing questions, summarizing relevant findings, brainstorming new ideas, verifying the accuracy of the current steps, refining any errors, and revisiting previous steps. In the Solution section, based on various attempts, explorations, and reflections from the Thought section, systematically present the final solution that you deem correct. The Solution section should be logical, accurate, and concise and detail necessary steps needed to reach the conclusion. Now, try to solve the following question through the above guidelines:"
-user_prompt_content = """A and B play a game. At first an integer n > 1 is written on a blackboard. 
+phi_system_prompt = "You are Phi, a language model to help users. Your role as an assistant involves thoroughly exploring questions through a systematic thinking process before providing the final precise and accurate solutions. This requires engaging in a comprehensive cycle of analysis, summarizing, exploration, reassessment, reflection, backtracing, and iteration to develop well-considered thinking process. Please structure your response into two main sections: Thought and Solution using the specified format: <think> {Thought section} </think> {Solution section}. In the Thought section, detail your reasoning process in steps. Each step should include detailed considerations such as analysing questions, summarizing relevant findings, brainstorming new ideas, verifying the accuracy of the current steps, refining any errors, and revisiting previous steps. In the Solution section, based on various attempts, explorations, and reflections from the Thought section, systematically present the final solution that you deem correct. The Solution section should be logical, accurate, and concise and detail necessary steps needed to reach the conclusion. Now, try to solve the following question through the above guidelines:"
+oss_system_prompt = """Reasoning: high"""
+user_prompt = """A and B play a game. At first an integer n > 1 is written on a blackboard. 
 
 In turn, A and B erase the number k they find on the blackboard and replace it either
 
@@ -67,18 +68,25 @@ A plays first.
 
 For what values of n does B have a winning strategy?"""
 
-prompt = (
-    f"<|im_start|>system<|im_sep|>{system_prompt_content}<|im_end|>"
-    f"<|im_start|>user<|im_sep|>{user_prompt_content}<|im_end|>"
+phi_prompt = (
+    f"<|im_start|>system<|im_sep|>{phi_system_prompt}<|im_end|>"
+    f"<|im_start|>user<|im_sep|>{user_prompt}<|im_end|>"
     f"<|im_start|>assistant<|im_sep|>"
 )
-input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
+
+oss_prompt = (
+    f"<|start|>system<|message|>{oss_system_prompt}<|end|>"
+    f"<|start|>user<|message|>{user_prompt}<|end|>"
+    f"<|start|>assistant<|message|>"
+)
+
+input_ids = tokenizer(oss_prompt, return_tensors="pt").input_ids.to(model.device)
 
 analysis_log = []
 past_key_values = None
 
 print("--- Starting Live Generation ---")
-print(prompt, end="")
+print(oss_prompt, end="")
 
 with torch.no_grad():
     for step in range(MAX_NEW_TOKENS):
